@@ -1,0 +1,225 @@
+---
+title: "Statistical code for Sequence analysis of capnography waveform abnormalities"
+author: "Aaron Conway"
+date: '2019-02-01'
+output: github_document
+---
+
+```{r warning=FALSE, message=FALSE}
+library(tidyverse)
+library(TraMineR)
+library(cluster)
+library(WeightedCluster)
+library(gt)
+library(qwraps2)
+```
+
+#Setting up dataframe
+
+##Load in capnography data
+
+```{r warning=FALSE, message=FALSE}
+myCapnoData <- read_csv("data.csv")
+```
+
+##Code to produce Table 1
+
+```{r warning=FALSE, message=FALSE}
+options(qwraps2_markup = "markdown")
+our_summary1 <-
+  list("Age" =
+         list("mean (sd)" = ~ qwraps2::mean_sd(Age)),
+       "Sex" =
+         list("Female" = ~ qwraps2::n_perc0(Sex==1)),
+       "Procedure" =
+         list("Permanent pacemaker implant or generator change" = ~ qwraps2::n_perc0(procedure == "PPM"),
+              "Implantable cardioverter defibrillator implant 
+              or generator change"  = ~ qwraps2::n_perc0(procedure == "ICD"),
+              "Cardiac resynchronisation therapy"  = ~ qwraps2::n_perc0(procedure == "CRT"),
+              "Atrial flutter ablation"  = ~ qwraps2::n_perc0(procedure == "flutter"),
+              "Other arrhythmia ablation"  = ~ qwraps2::n_perc0(procedure == "RFA"),
+              "Diagnostic electrophysiology study"  = ~ qwraps2::n_perc0(procedure == "EPS"),
+              "Loop recorder implant"  = ~ qwraps2::n_perc0(procedure == "Loop recorder implant")),
+       "BMI" =
+         list("mean (sd)" = ~ qwraps2::mean_sd(BMI, na_rm = TRUE, show_n = "never")),
+       "ASA classification status" =
+         list("One" = ~ qwraps2::n_perc0(ASA == 1),
+              "Two"  = ~ qwraps2::n_perc0(ASA == 2),
+              "Three"  = ~ qwraps2::n_perc0(ASA == 3),
+              "Four"  = ~ qwraps2::n_perc0(ASA == 4)),
+       "Obstructive Sleep Apnoea" =
+         list("Yes" = ~ qwraps2::n_perc0(OSA == 1),
+              "No"  = ~ qwraps2::n_perc0(OSA == 0)),
+        "STOP-BANG Obstructive Sleep Apnoea Risk Classification" =
+         list("Low" = ~ qwraps2::n_perc0(STOPBANG == "low", na_rm = TRUE),
+              "Moderate"  = ~ qwraps2::n_perc0(STOPBANG == "intermediate", na_rm = TRUE),
+              "High"  = ~ qwraps2::n_perc0(STOPBANG == "high", na_rm = TRUE)),
+       "Chronic Obstructive Pulmonary Disease" =
+         list("Yes" = ~ qwraps2::n_perc0(COPD == 1),
+              "No"  = ~ qwraps2::n_perc0(COPD == 0)),
+       "Past or present smoker" =
+         list("Yes" = ~ qwraps2::n_perc0(Smoker == 1, na_rm = TRUE),
+              "No"  = ~ qwraps2::n_perc0(Smoker == 0, na_rm = TRUE)),
+       "Charlson Comoridity Index" =
+         list("mean (sd)" = ~ qwraps2::mean_sd(CCI, na_rm = TRUE, show_n = "never")),
+       "Midazolam total dose (mg)" =
+         list("max" = ~ max(Midazolam),
+           "mean (sd)" = ~ qwraps2::mean_sd(Midazolam)),
+       "Fentanyl total dose (mg)" =
+         list("max" = ~ max(Fentanyl),
+           "mean (sd)" = ~ qwraps2::mean_sd(Fentanyl)),
+       "TcCO2 at baseline (mm Hg)" =
+         list("mean (sd)" = ~ qwraps2::mean_sd(PCO2.baseline)),
+       "TcCO2 peak (mm Hg)" =
+         list("max" = ~ max(PCO2.peak),
+              "mean (sd)" = ~ qwraps2::mean_sd(PCO2.peak))
+       )
+
+whole <- summary_table(myCapnoData, our_summary1)
+
+grouped <- summary_table(dplyr::group_by(myCapnoData, cluster.CHI), our_summary1)
+
+```
+
+```{r results="asis"}
+both <- print(cbind(whole, grouped),
+      rtitle = "Summary Statistics",
+      cnames = c("Total Sample", "Normal breathing","Hypopnea", "Apnea", "Bradypnea"))
+```
+
+
+#Respiratory state sequence analysis
+
+##Setting up state sequence object using TraMineR
+  
+```{r warning=FALSE, message=FALSE}
+rsa <- read_csv("rsa.csv")
+```
+
+
+```{r }
+rsa.alphabet1 <- c("0", "1","3", "5")
+rsa.labels1 <- c("normal breathing", "hypoventilation","bradypnoea", "apnoea")
+rsa.scodes1 <- c("NB", "Hypo", "Brady", "Apn")
+rsa.seq1 <- seqdef(rsa, alphabet = rsa.alphabet1, states = rsa.scodes1, 
+                   labels = rsa.labels1, left = "DEL", right = "DEL", gaps = "DEL", fill = TRUE)
+```
+ 
+ 
+##Chi-squared distance over the full observed timeframe
+
+This distance measure produced the most logical clustering solution with clusters of patients whose post-sedation respiratory state sequence was dominiated by "normal breathing", "hypopnoeic hypoventilation", "periods of apnoea" and "bradypnoeic hypoventilation".
+
+First we make a function to test different cluster sizes
+```{r }
+clusterfunction <- function(x){
+
+CHI <- seqdist(rsa.seq1, method = "CHI2", with.missing = TRUE, norm = "auto",  step = max(seqlength(rsa.seq1)))
+clusterward.CHI <- agnes(CHI, diss = TRUE, method = "ward")
+cl1.3.CHI <- cutree(clusterward.CHI, k = x)
+cl1.3fac.CHI <- factor(cl1.3.CHI, labels = paste("Type", 1:x))
+
+#Plot all the sequences within each cluster.
+
+seqIplot(rsa.seq1, group = cl1.3fac.CHI, sortv = "from.start")
+}
+```
+
+
+###CHI distance matrix with 3 clusters
+```{r warning=FALSE, message=FALSE}
+clusterfunction(3)
+```
+
+###CHI distance matrix with 5 clusters
+```{r warning=FALSE, message=FALSE}
+clusterfunction(5)
+```
+
+###CHI distance matrix with 6 clusters
+```{r warning=FALSE, message=FALSE}
+clusterfunction(6)
+```
+
+###CHI distance matrix with 4 clusters
+
+Code used to produce Figure 1
+```{r warning=FALSE, message=FALSE}
+CHI <- seqdist(rsa.seq1, method = "CHI2", with.missing = TRUE, norm = "auto",  step = max(seqlength(rsa.seq1)))
+clusterward.CHI <- agnes(CHI, diss = TRUE, method = "ward")
+cl1.3.CHI <- cutree(clusterward.CHI, k = 4)
+cl1.3fac.CHI <- factor(cl1.3.CHI, labels = paste("Type", 1:4))
+seqIplot(rsa.seq1, group = cl1.3fac.CHI, sortv = "from.start",yaxis = FALSE, with.legend=TRUE, xtstep=1000)
+```
+
+
+
+###Cluster quality 
+
+Measures of the quality of the cluster solution were calculated. These measures of cluster quality were not used to aid selection of the number of clusters or the optmial algorithm because on visual inspection, none of the other cluster solutions made clinical sense. 
+```{r}
+wcClusterQuality(CHI, clustering = cl1.3fac.CHI)
+```
+
+In general, the results of the cluster quality measures indicate that a reasonable structure was identified.
+
+
+# PCA
+
+Principal Components score for the total doses of midazolam and fentanyl was calculated because these two variables were highly correlated. The scores were added to the dataframe for use in the multivariable distance matrix regression analysis
+
+```{r }
+p.comps <- myCapnoData %>% 
+  select(Fentanyl, Midazolam) %>%
+  princomp(cor=TRUE)
+
+myCapnoData <- myCapnoData %>%
+  mutate(PCA1 = p.comps$scores[,1] , PCA2 = p.comps$scores[,2])
+```
+
+
+#Multivariable distance matrix regression analysis
+
+Code to produce Table 2.
+
+```{r}
+set.seed(1)
+diss.multi <- dissmfacw(CHI ~ PCO2.peak + PCO2.baseline + OSA  + Age+ BMI + Sex + DOSA  + PCA1 + PCA2 + Smoker + COPD + CCI + intervention + STOPBANG + Emergency + SPO, data = myCapnoData, R = 1000)
+diss.multi.table <- data.frame(diss.multi$mfac)
+colnames(diss.multi.table) <- c("Variable", "Pseudo F", "Pseudo R2", "p value")
+diss.multi.table <- diss.multi.table %>% 
+  mutate(Total  = `Pseudo R2`/diss.multi.table[nrow(diss.multi.table),3])
+colnames(diss.multi.table) <- c("Variable", "Pseudo F", "Pseudo R2", "p value", "Proportion of variance explained")
+col.order <- c("Variable", "Pseudo F", "Pseudo R2",  "Proportion of variance explained", "p value")
+diss.multi.table$Variable <- c("Peak TcCO2", "Baseline TcCO2", "OSA", "Age", "Body mass index", "Sex", "Day surgery admission", "PCA factor 1 of total sedation doses", "PCA factor 2 of total sedation doses", "Past or present smoker", "COPD", "Charlson comorbidity index score", "Patients who received intervention to support respiration", "STOPBANG (low, intermediate or high risk)", "Emergency admission", "Time above SpO2 97%", "Total")
+diss.multi.table <- diss.multi.table[,col.order]
+round_df <- function(df, digits) {
+  nums <- vapply(df, is.numeric, FUN.VALUE = logical(1))
+
+  df[,nums] <- round(df[,nums], digits = digits)
+
+  (df)
+}
+
+diss.multi.table <- round_df(diss.multi.table, 3)
+kableExtra::kable(diss.multi.table, caption = "Multivariate distance matrix regression analysis")
+```
+
+
+
+#Sequence index plot of patients who received interventions to support breathing
+
+Code to produce images in Figure 2
+
+```{r }
+selection <- c(2,10,12,16,18,20,26,34,46,48,57,76,81)
+rsa.seq.interventions <- rsa.seq1[selection,]
+seqIplot(rsa.seq.interventions,yaxis=FALSE, sortv = "from.start",axes=F, with.legend=F, ylab = "")
+axis(1, at=c(1,1000, 2000, 3000)-.5, labels=c("1", "1000", "2000", "3000"))
+```
+
+
+```{r}
+seqlegend(rsa.seq.interventions, ncol=2)
+```
+
