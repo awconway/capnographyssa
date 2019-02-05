@@ -1,7 +1,8 @@
-Statistical code for Sequence analysis of capnography waveform abnormalities
+Sequence analysis of capnography waveform abnormalities during nurse-administered procedural sedation and analgesia in the cardiac catheterization laboratory
 ================
-Aaron Conway
-2019-02-01
+
+This repository contains the data and code used for statistical analysis.
+
 
 ``` r
 library(tidyverse)
@@ -11,6 +12,7 @@ library(WeightedCluster)
 library(gt)
 library(qwraps2)
 ```
+
 
 Setting up dataframe
 ====================
