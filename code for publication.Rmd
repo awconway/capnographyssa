@@ -207,7 +207,7 @@ kableExtra::kable(diss.multi.table, caption = "Multivariate distance matrix regr
 
 
 
-#Sequence index plot of patients who received interventions to support breathing
+# Sequence index plot of patients who received interventions to support breathing
 
 Code to produce images in Figure 2
 
