@@ -10,7 +10,6 @@ library(tidyverse)
 library(TraMineR)
 library(cluster)
 library(WeightedCluster)
-library(gt)
 library(qwraps2)
 ```
 

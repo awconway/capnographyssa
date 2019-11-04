@@ -20,7 +20,5 @@ Depends:
     tidyverse,
     TraMineR,
     WeightedCluster
-Remotes: 
-    rstudio/gt
 Encoding: UTF-8
 LazyData: true
