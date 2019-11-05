@@ -1,19 +1,17 @@
 Type: Compendium
 Package: capnographyssa
-Title: This repository contains the data and code used for statistical analysis.
+Title: Code for statistical analysis
 Version: 0.0.1
 Authors@R: 
     person(given = "Aaron",
            family = "Conway",
            role = c("aut", "cre"),
-           email = "aaronconwayphd@gmail.com",
-           comment = c(ORCID = "0000-0002-9583-8636))
-Description: Sequence analysis of capnography waveform abnormalities during nurse-administered procedural sedation and analgesia in the cardiac catheterization laboratory
-License: MIT + file LICENSE
+           email = "aaronconwayphd@gmail.com")
+Description: Code for statistical analysis
+License: MIT + LICENSE
 Depends: 
     cluster,
     dplyr,
-    gt,
     kableExtra,
     qwraps2,
     rmarkdown,
