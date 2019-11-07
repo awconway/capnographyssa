@@ -1,5 +1,5 @@
 <!-- badges: start -->
-[![Launch Rstudio Binder](http://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/awconway/capnographyssa/master?urlpath=rstudio)
+# Click on the binder link to launch an RStudio session and then open `code-for-publication.RmD` to reproduce the analysis [![Launch Rstudio Binder](http://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/awconway/capnographyssa/master?urlpath=rstudio)
 <!-- badges: end -->
 
 Sequence analysis of capnography waveform abnormalities during nurse-administered procedural sedation and analgesia in the cardiac catheterization laboratory
