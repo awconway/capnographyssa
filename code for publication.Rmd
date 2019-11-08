@@ -126,17 +126,17 @@ seqIplot(rsa.seq1, group = cl1.3fac.CHI, sortv = "from.start")
 
 
 ###CHI distance matrix with 3 clusters
-```{r warning=FALSE, message=FALSE}
+```{r warning=FALSE, message=FALSE, include=FALSE}
 clusterfunction(3)
 ```
 
 ###CHI distance matrix with 5 clusters
-```{r warning=FALSE, message=FALSE}
+```{r warning=FALSE, message=FALSE, include=FALSE}
 clusterfunction(5)
 ```
 
 ###CHI distance matrix with 6 clusters
-```{r warning=FALSE, message=FALSE}
+```{r warning=FALSE, message=FALSE, include=FALSE}
 clusterfunction(6)
 ```
 
