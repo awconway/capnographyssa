@@ -4,7 +4,6 @@ Sequence analysis of capnography waveform abnormalities during nurse-administere
 ================
 
 ## Reproducibility
----
 
 ### Click on the binder link to launch an RStudio session and then open and knit the document `'code for publication.RmD'` to reproduce the analysis of results presented in the publication.
 
